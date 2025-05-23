@@ -1,0 +1,2 @@
+slide_id,process,status,seg_level,sthresh,mthresh,close,use_otsu,keep_ids,exclude_ids,a_t,a_h,max_n_holes,vis_level,line_thickness,use_padding,contour_fn
+M-1.ndpi,0,processed,6,7,7,4,False,none,none,120.0,16.0,8,6,250,True,four_pt

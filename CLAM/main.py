@@ -170,7 +170,7 @@ elif args.task == 'task_2_tumor_subtyping':
                             shuffle = False, 
                             seed = args.seed, 
                             print_info = True,
-                            label_dict = {'subtype_1':0, 'subtype_2':1, 'subtype_3':2},
+                            label_dict = {'epithelioid':0, 'sarcomatoid':1, 'biphasic':2},
                             patient_strat= False,
                             ignore=[])
 

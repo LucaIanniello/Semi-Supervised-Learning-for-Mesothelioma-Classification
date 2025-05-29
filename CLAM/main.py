@@ -170,7 +170,18 @@ elif args.task == 'task_2_tumor_subtyping':
                             shuffle = False, 
                             seed = args.seed, 
                             print_info = True,
-                            label_dict = {'epithelioid':0, 'sarcomatoid':1, 'biphasic':2},
+                            label_dict = {'B':0, 'S':1, 'E':2},
+                            patient_strat= False,
+                            ignore=[])
+    
+elif args.task == 'MLIA_Project':
+    args.n_classes=3
+    dataset = Generic_MIL_Dataset(csv_path = '/MLIAProject/CLAM/dataset_csv/MLIA_Project_CLAM.csv',
+                            data_dir= os.path.join(args.data_root_dir, ''),
+                            shuffle = False, 
+                            seed = args.seed, 
+                            print_info = True,
+                            label_dict = {'B':0, 'S':1, 'E':2},
                             patient_strat= False,
                             ignore=[])
 

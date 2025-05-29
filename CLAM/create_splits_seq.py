@@ -43,11 +43,11 @@ elif args.task == 'task_2_tumor_subtyping':
     
 elif args.task == 'MLIA_Project':
     args.n_classes=3
-    dataset = Generic_WSI_Classification_Dataset(csv_path = 'dataset_csv/MLIA_Project.csv',
+    dataset = Generic_WSI_Classification_Dataset(csv_path = 'MLIAProject/CLAM/dataset_csv/MLIA_Project_CLAM.csv',
                             shuffle = False, 
                             seed = args.seed, 
                             print_info = True,
-                            label_dict = {'epithelioid':0, 'sarcomatoid':1, 'biphasic':2},
+                            label_dict = {'B':0, 'S':1, 'E':2},
                             patient_strat= True,
                             patient_voting='maj',
                             ignore=[])

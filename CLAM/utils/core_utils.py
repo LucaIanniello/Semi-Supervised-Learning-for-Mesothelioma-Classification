@@ -63,7 +63,7 @@ class EarlyStopping:
         self.counter = 0
         self.best_score = None
         self.early_stop = False
-        self.val_loss_min = np.Inf
+        self.val_loss_min = np.inf
 
     def __call__(self, epoch, val_loss, model, ckpt_name = 'checkpoint.pt'):
 
@@ -204,6 +204,8 @@ def train(datasets, cur, args):
     print('Val error: {:.4f}, ROC AUC: {:.4f}'.format(val_error, val_auc))
 
     results_dict, test_error, test_auc, acc_logger = summary(model, test_loader, args.n_classes)
+    print('\nTest Set, test_error: {:.4f}, test_auc: {:.4f}'.format(test_error, test_auc))
+    
     print('Test error: {:.4f}, ROC AUC: {:.4f}'.format(test_error, test_auc))
 
     for i in range(args.n_classes):
@@ -211,6 +213,7 @@ def train(datasets, cur, args):
         print('class {}: acc {}, correct {}/{}'.format(i, acc, correct, count))
 
         if writer:
+          if acc is not None:
             writer.add_scalar('final/test_class_{}_acc'.format(i), acc, 0)
 
     if writer:

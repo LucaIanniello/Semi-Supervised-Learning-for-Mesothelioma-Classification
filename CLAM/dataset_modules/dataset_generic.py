@@ -96,10 +96,10 @@ class Generic_WSI_Classification_Dataset(Dataset):
 		
 		for p in patients:
 			locations = self.slide_data[self.slide_data['case_id'] == p].index.tolist()
-			pdb.set_trace()
+			
 			assert len(locations) > 0
 			label = self.slide_data['label'][locations].values
-			pdb.set_trace()
+			
 			if patient_voting == 'max':
 				label = label.max() # get patient label (MIL convention)
 			elif patient_voting == 'maj':

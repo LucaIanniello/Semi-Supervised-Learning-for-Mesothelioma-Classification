@@ -93,7 +93,8 @@ if __name__ == '__main__':
         else:
             print ('\n'+key + " : " + str(value))
             
-    decision = input('Continue? Y/N ')
+    decision = "Y" # originally decision = input('Continue? Y/N ')
+
     if decision in ['Y', 'y', 'Yes', 'yes']:
         pass
     elif decision in ['N', 'n', 'No', 'NO']:

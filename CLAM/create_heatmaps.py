@@ -81,7 +81,7 @@ def parse_config_dict(args, config_dict):
     return config_dict
 
 if __name__ == '__main__':
-    config_path = os.path.join('heatmaps/configs', args.config_file)
+    config_path = os.path.join('', args.config_file)
     config_dict = yaml.safe_load(open(config_path, 'r'))
     config_dict = parse_config_dict(args, config_dict)
 
@@ -151,7 +151,7 @@ if __name__ == '__main__':
         df = initialize_df(slides, def_seg_params, def_filter_params, def_vis_params, def_patch_params, use_heatmap_args=False)
         
     else:
-        df = pd.read_csv(os.path.join('heatmaps/process_lists', data_args.process_list))
+        df = pd.read_csv(os.path.join('', data_args.process_list))
         df = initialize_df(df, def_seg_params, def_filter_params, def_vis_params, def_patch_params, use_heatmap_args=False)
 
     mask = df['process'] == 1

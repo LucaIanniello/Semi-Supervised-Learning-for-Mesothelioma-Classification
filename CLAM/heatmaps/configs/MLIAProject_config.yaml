@@ -18,9 +18,9 @@ data_arguments:
   # column name for key in data_dir (if a dict mapping is used)
   data_dir_key: source
   # csv list containing slide_ids (can additionally have seg/patch paramters, class labels, etc.)
-  process_list: MLIAProject/CLAM/heatmaps\process_lists\heatmap_dataset.cs
+  process_list: MLIAProject/CLAM/heatmaps/process_lists/heatmap_dataset.csv
   # preset file for segmentation/patching
-  preset: MLIAProject\presets\process_list_edited_th12.csv
+  preset: MLIAProject/presets/process_list_edited_th12.csv
   # file extention for slides
   slide_ext: .ndpi
   # label dictionary for str: interger mapping (optional)

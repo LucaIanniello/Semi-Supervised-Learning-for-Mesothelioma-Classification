@@ -55,7 +55,7 @@ def compute_from_patches(wsi_object, img_transforms, feature_extractor=None, cla
     patch_size = wsi_kwargs['patch_size'] 
     
     roi_dataset = Wsi_Region(wsi_object, t=img_transforms, **wsi_kwargs)
-    roi_loader = get_simple_loader(roi_dataset, batch_size=batch_size, num_workers=8)
+    roi_loader = get_simple_loader(roi_dataset, batch_size=batch_size, num_workers=2)
     print('total number of patches to process: ', len(roi_dataset))
     num_batches = len(roi_loader)
     print('number of batches: ', num_batches)
@@ -73,11 +73,16 @@ def compute_from_patches(wsi_object, img_transforms, feature_extractor=None, cla
                 if A.size(0) > 1: #CLAM multi-branch attention
                     A = A[clam_pred]
 
+                #print(A.shape)
                 A = A.view(-1, 1).cpu().numpy()
+                #print(A.shape)
 
                 if ref_scores is not None:
-                    for score_idx in range(len(A)):
-                        A[score_idx] = score2percentile(A[score_idx], ref_scores)
+                    A = np.array([
+                      [score2percentile(a[0], ref_scores)] for a in A
+                    ])
+
+
 
                 asset_dict = {'attention_scores': A, 'coords': coords}
                 save_path = save_hdf5(attn_save_path, asset_dict, mode=mode)

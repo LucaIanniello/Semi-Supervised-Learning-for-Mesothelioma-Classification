@@ -575,7 +575,10 @@ class WholeSlideImage(object):
         counter = np.full(np.flip(region_size), 0).astype(np.uint16)      
         count = 0
         for idx in range(len(coords)):
-            score = scores[idx]
+            #print(scores.shape)
+            score = np.mean(scores[idx])  # or np.max(scores[idx]) depending on your preference
+            #print(score)
+            #score = scores[idx]
             coord = coords[idx]
             if score >= threshold:
                 if binarize:
@@ -627,7 +630,9 @@ class WholeSlideImage(object):
             if (idx + 1) % twenty_percent_chunk == 0:
                 print('progress: {}/{}'.format(idx, len(coords)))
             
-            score = scores[idx]
+            #score = scores[idx]
+            score = np.mean(scores[idx])  # or np.max(scores[idx]) depending on your preference
+
             coord = coords[idx]
             if score >= threshold:
 

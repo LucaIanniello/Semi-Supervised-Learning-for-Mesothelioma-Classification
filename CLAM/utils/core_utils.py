@@ -119,6 +119,16 @@ def train(datasets, cur, args):
         loss_fn = SmoothTop1SVM(n_classes = args.n_classes)
         if device.type == 'cuda':
             loss_fn = loss_fn.cuda()
+
+    if args.bag_loss == 'w_ce':
+      device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+      # After computing weights in your dataset method or before initializing loss:
+      weights = train_split.get_class_weights().to(device)  # Move weights to GPU
+      print("WEIGHTS",weights)
+
+      loss_fn = nn.CrossEntropyLoss(weight=weights)
+
     else:
         loss_fn = nn.CrossEntropyLoss()
     print('Done!')

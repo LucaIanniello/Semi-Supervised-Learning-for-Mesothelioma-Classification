@@ -8,8 +8,44 @@ from models.model_clam import CLAM_MB, CLAM_SB
 from sklearn.preprocessing import label_binarize
 from sklearn.metrics import roc_auc_score, roc_curve
 from sklearn.metrics import auc as calc_auc
+# losses.py
+import torch.nn as nn
+import torch.nn.functional as F
 
 device=torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+class FocalLoss(nn.Module):
+    def __init__(self, alpha=None, gamma=2.0, reduction='mean'):
+        """
+        Focal Loss for multi-class classification.
+
+        Args:
+            alpha (Tensor, optional): Class weights [C]. Use to address class imbalance.
+            gamma (float): Focusing parameter (>= 0). Higher focuses more on hard examples.
+            reduction (str): 'mean', 'sum', or 'none'
+        """
+        super(FocalLoss, self).__init__()
+        self.alpha = alpha
+        self.gamma = gamma
+        self.reduction = reduction
+
+    def forward(self, inputs, targets):
+        """
+        Args:
+            inputs (Tensor): Logits of shape [B, C]
+            targets (Tensor): Ground truth labels of shape [B]
+        """
+        ce_loss = F.cross_entropy(inputs, targets, reduction='none', weight=self.alpha)
+        pt = torch.exp(-ce_loss)  # pt = softmax probability of the correct class
+        focal_loss = ((1 - pt) ** self.gamma) * ce_loss
+
+        if self.reduction == 'mean':
+            return focal_loss.mean()
+        elif self.reduction == 'sum':
+            return focal_loss.sum()
+        else:
+            return focal_loss
+
 
 class Accuracy_Logger(object):
     """Accuracy logger"""
@@ -128,6 +164,14 @@ def train(datasets, cur, args):
       print("WEIGHTS",weights)
 
       loss_fn = nn.CrossEntropyLoss(weight=weights)
+
+    if args.bag_loss == 'focal':
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+        loss_fn = FocalLoss(alpha=None, gamma=0.3)
+        if device.type == 'cuda':
+            loss_fn = loss_fn.cuda()
+
 
     else:
         loss_fn = nn.CrossEntropyLoss()

@@ -125,6 +125,34 @@ class EarlyStopping:
         torch.save(model.state_dict(), ckpt_name)
         self.val_loss_min = val_loss
 
+
+# Supervised contrastive loss function
+# It is the generic version of the N-pair contrastive loss function
+def supervised_contrastive_loss(features, labels, temperature=0.07):
+    features = torch.nn.functional.normalize(features, dim=1)
+    similarity_matrix = torch.matmul(features, features.T) / temperature
+    labels = labels.contiguous().view(-1, 1)
+    
+    # Dreate a mask where mask[i, j] = 1 if labels[i] == labels[j], else 0
+    mask = torch.eq(labels, labels.T).float().to(features.device)
+    logits_mask = torch.ones_like(mask) - torch.eye(mask.size(0), device=mask.device)
+    mask = mask * logits_mask
+    
+    # Exponentiate similarity scores and apply mask to ignore self-comparisons
+    exp_sim = torch.exp(similarity_matrix) * logits_mask
+    
+    # Compute log-probabilities for each pair
+    log_prob = similarity_matrix - torch.log(exp_sim.sum(1, keepdim=True) + 1e-8)
+    
+    # For each anchor, compute the mean log-probability over positive pairs
+    # In this case I consider the anchor as each patch embedding in the batch
+    # For each anchor, the loss pulls together all the patches embedding with the same label
+    # and pushes away the patches with different labels
+    mean_log_prob_pos = (mask * log_prob).sum(1) / (mask.sum(1) + 1e-8)
+    loss = -mean_log_prob_pos.mean()
+    return loss
+
+
 def train(datasets, cur, args):
     """   
         train for a single fold
@@ -288,22 +316,38 @@ def train_loop_clam(epoch, model, loader, optimizer, n_classes, bag_weight, writ
     train_error = 0.
     train_inst_loss = 0.
     inst_count = 0
+    
+    contrastive_weight = 0.1
 
     print('\n')
     for batch_idx, (data, label) in enumerate(loader):
         data, label = data.to(device), label.to(device)
         logits, Y_prob, Y_hat, _, instance_dict = model(data, label=label, instance_eval=True)
+                
+        # print('batch {}, bag_size: {}, label: {}'.format(batch_idx, data.size(0), label.item()))
 
+        # BAG LOSS
         acc_logger.log(Y_hat, label)
         loss = loss_fn(logits, label)
         loss_value = loss.item()
+        
+        # INSTANCE LOSS
 
         instance_loss = instance_dict['instance_loss']
         inst_count+=1
         instance_loss_value = instance_loss.item()
         train_inst_loss += instance_loss_value
         
-        total_loss = bag_weight * loss + (1-bag_weight) * instance_loss 
+        # CONTRASTIVE LOSS
+        instance_embeddings = instance_dict['h']
+        bag_label = label.item()
+        bag_size = instance_embeddings.size(0)
+        
+        patch_labels = torch.full((bag_size,), bag_label, dtype=torch.long, device=instance_embeddings.device)
+        contrastive_loss = supervised_contrastive_loss(instance_embeddings, patch_labels)
+        
+        # total_loss = bag_weight * loss + (1-bag_weight) * instance_loss 
+        total_loss = (bag_weight * loss + (1 - bag_weight - contrastive_weight) * instance_loss + contrastive_weight * contrastive_loss)
 
         inst_preds = instance_dict['inst_preds']
         inst_labels = instance_dict['inst_labels']

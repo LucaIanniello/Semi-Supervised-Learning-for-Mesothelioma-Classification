@@ -249,4 +249,8 @@ class CLAM_MB(CLAM_SB):
             results_dict = {}
         if return_features:
             results_dict.update({'features': M})
+        
+        # MODIFIED: add h to results_dict for the contrastive loss
+        # h is the aggregated features from the attention network
+        results_dict['h'] = h
         return logits, Y_prob, Y_hat, A_raw, results_dict

@@ -125,6 +125,11 @@ class EarlyStopping:
         torch.save(model.state_dict(), ckpt_name)
         self.val_loss_min = val_loss
 
+def get_max_patches(fraction=0.5):
+    free_mem = torch.cuda.get_device_properties(0).total_memory - torch.cuda.memory_allocated(0)
+    usable_mem = free_mem * fraction
+    max_patches = int((usable_mem / 4) ** 0.5)
+    return max_patches
 
 # Supervised contrastive loss function
 # It is the generic version of the N-pair contrastive loss function
@@ -342,9 +347,19 @@ def train_loop_clam(epoch, model, loader, optimizer, n_classes, bag_weight, writ
         instance_embeddings = instance_dict['h']
         bag_label = label.item()
         bag_size = instance_embeddings.size(0)
-        
         patch_labels = torch.full((bag_size,), bag_label, dtype=torch.long, device=instance_embeddings.device)
-        contrastive_loss = supervised_contrastive_loss(instance_embeddings, patch_labels)
+        
+        max_patches = min(1024, get_max_patches(0.1))
+        if instance_embeddings.size(0) > max_patches:
+            idx = torch.randperm(instance_embeddings.size(0))[:max_patches]
+            sampled_embeddings = instance_embeddings[idx]
+            sampled_labels = patch_labels[idx]
+        else:
+            sampled_embeddings = instance_embeddings
+            sampled_labels = patch_labels
+
+        contrastive_loss = supervised_contrastive_loss(sampled_embeddings, sampled_labels)   
+        # contrastive_loss = supervised_contrastive_loss(instance_embeddings, patch_labels)
         
         total_loss = bag_weight * loss + (1-bag_weight) * instance_loss 
         # total_loss = (bag_weight * loss + (1 - bag_weight - contrastive_weight) * instance_loss + contrastive_weight * contrastive_loss)

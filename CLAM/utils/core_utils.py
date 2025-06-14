@@ -346,8 +346,8 @@ def train_loop_clam(epoch, model, loader, optimizer, n_classes, bag_weight, writ
         patch_labels = torch.full((bag_size,), bag_label, dtype=torch.long, device=instance_embeddings.device)
         contrastive_loss = supervised_contrastive_loss(instance_embeddings, patch_labels)
         
-        # total_loss = bag_weight * loss + (1-bag_weight) * instance_loss 
-        total_loss = (bag_weight * loss + (1 - bag_weight - contrastive_weight) * instance_loss + contrastive_weight * contrastive_loss)
+        total_loss = bag_weight * loss + (1-bag_weight) * instance_loss 
+        # total_loss = (bag_weight * loss + (1 - bag_weight - contrastive_weight) * instance_loss + contrastive_weight * contrastive_loss)
 
         inst_preds = instance_dict['inst_preds']
         inst_labels = instance_dict['inst_labels']

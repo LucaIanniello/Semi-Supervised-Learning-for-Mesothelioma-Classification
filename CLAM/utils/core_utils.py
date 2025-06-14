@@ -129,6 +129,7 @@ def train(datasets, cur, args):
     """   
         train for a single fold
     """
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print('\nTraining Fold {}!'.format(cur))
     writer_dir = os.path.join(args.results_dir, str(cur))
     if not os.path.isdir(writer_dir):
@@ -156,7 +157,7 @@ def train(datasets, cur, args):
         if device.type == 'cuda':
             loss_fn = loss_fn.cuda()
 
-    if args.bag_loss == 'w_ce':
+    elif args.bag_loss == 'w_ce':
       device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
       # After computing weights in your dataset method or before initializing loss:
@@ -165,13 +166,12 @@ def train(datasets, cur, args):
 
       loss_fn = nn.CrossEntropyLoss(weight=weights)
 
-    if args.bag_loss == 'focal':
+    elif args.bag_loss == 'focal':
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
         loss_fn = FocalLoss(alpha=None, gamma=0.3)
         if device.type == 'cuda':
             loss_fn = loss_fn.cuda()
-
 
     else:
         loss_fn = nn.CrossEntropyLoss()

@@ -350,6 +350,7 @@ def train_loop_clam(epoch, model, loader, optimizer, n_classes, bag_weight, writ
             bag_size = instance_embeddings.size(0)
             patch_labels = torch.full((bag_size,), bag_label, dtype=torch.long, device=instance_embeddings.device)
             
+            # Sample a maximum number of patches to avoid memory issues
             max_patches = max(1024, get_max_patches(0.1))
             if instance_embeddings.size(0) > max_patches:
                 idx = torch.randperm(instance_embeddings.size(0))[:max_patches]
@@ -358,8 +359,11 @@ def train_loop_clam(epoch, model, loader, optimizer, n_classes, bag_weight, writ
             else:
                 sampled_embeddings = instance_embeddings
                 sampled_labels = patch_labels
-
-            contrastive_loss = supervised_contrastive_loss(sampled_embeddings, sampled_labels)  
+                
+            contrastive_loss = supervised_contrastive_loss(sampled_embeddings, sampled_labels) 
+            
+            # If you want to use the instance embeddings for contrastive loss, uncomment the line below    
+            # contrastive_loss = supervised_contrastive_loss(instance_embeddings, patch_labels)            
             total_loss = (bag_weight * loss + (1 - bag_weight - contrastive_weight) * instance_loss + contrastive_weight * contrastive_loss)
         
         else:

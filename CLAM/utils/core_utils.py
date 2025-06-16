@@ -270,7 +270,7 @@ def train(datasets, cur, args):
 
     for epoch in range(args.max_epochs):
         if args.model_type in ['clam_sb', 'clam_mb'] and not args.no_inst_cluster:     
-            train_loop_clam(epoch, model, train_loader, optimizer, args.n_classes, args.bag_weight, writer, loss_fn)
+            train_loop_clam(epoch, model, train_loader, optimizer, args.n_classes, args.bag_weight, writer, loss_fn, args.contrastive_loss)
             stop = validate_clam(cur, epoch, model, val_loader, args.n_classes, 
                 early_stopping, writer, loss_fn, args.results_dir)
         
@@ -312,7 +312,7 @@ def train(datasets, cur, args):
     return results_dict, test_auc, val_auc, 1-test_error, 1-val_error 
 
 
-def train_loop_clam(epoch, model, loader, optimizer, n_classes, bag_weight, writer = None, loss_fn = None):
+def train_loop_clam(epoch, model, loader, optimizer, n_classes, bag_weight, writer = None, loss_fn = None, contrastive_loss = False):
     model.train()
     acc_logger = Accuracy_Logger(n_classes=n_classes)
     inst_logger = Accuracy_Logger(n_classes=n_classes)
@@ -344,25 +344,26 @@ def train_loop_clam(epoch, model, loader, optimizer, n_classes, bag_weight, writ
         train_inst_loss += instance_loss_value
         
         # CONTRASTIVE LOSS
-        # instance_embeddings = instance_dict['h']
-        # bag_label = label.item()
-        # bag_size = instance_embeddings.size(0)
-        # patch_labels = torch.full((bag_size,), bag_label, dtype=torch.long, device=instance_embeddings.device)
-        
-        # max_patches = max(1024, get_max_patches(0.1))
-        # if instance_embeddings.size(0) > max_patches:
-        #     idx = torch.randperm(instance_embeddings.size(0))[:max_patches]
-        #     sampled_embeddings = instance_embeddings[idx]
-        #     sampled_labels = patch_labels[idx]
-        # else:
-        #     sampled_embeddings = instance_embeddings
-        #     sampled_labels = patch_labels
+        if contrastive_loss:
+            instance_embeddings = instance_dict['h']
+            bag_label = label.item()
+            bag_size = instance_embeddings.size(0)
+            patch_labels = torch.full((bag_size,), bag_label, dtype=torch.long, device=instance_embeddings.device)
+            
+            max_patches = max(1024, get_max_patches(0.1))
+            if instance_embeddings.size(0) > max_patches:
+                idx = torch.randperm(instance_embeddings.size(0))[:max_patches]
+                sampled_embeddings = instance_embeddings[idx]
+                sampled_labels = patch_labels[idx]
+            else:
+                sampled_embeddings = instance_embeddings
+                sampled_labels = patch_labels
 
-        # contrastive_loss = supervised_contrastive_loss(sampled_embeddings, sampled_labels)   
-        # contrastive_loss = supervised_contrastive_loss(instance_embeddings, patch_labels)
+            contrastive_loss = supervised_contrastive_loss(sampled_embeddings, sampled_labels)  
+            total_loss = (bag_weight * loss + (1 - bag_weight - contrastive_weight) * instance_loss + contrastive_weight * contrastive_loss)
         
-        total_loss = bag_weight * loss + (1-bag_weight) * instance_loss 
-        # total_loss = (bag_weight * loss + (1 - bag_weight - contrastive_weight) * instance_loss + contrastive_weight * contrastive_loss)
+        else:
+            total_loss = bag_weight * loss + (1 - bag_weight) * instance_loss      
 
         inst_preds = instance_dict['inst_preds']
         inst_labels = instance_dict['inst_labels']

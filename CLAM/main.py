@@ -109,6 +109,8 @@ parser.add_argument('--subtyping', action='store_true', default=False,
 parser.add_argument('--bag_weight', type=float, default=0.7,
                     help='clam: weight coefficient for bag-level loss (default: 0.7)')
 parser.add_argument('--B', type=int, default=8, help='numbr of positive/negative patches to sample for clam')
+parser.add_argument('--contrastive_loss', default=False, action='store_true',
+                     help='enable contrastive loss for CLAM')
 args = parser.parse_args()
 device=torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -148,7 +150,8 @@ settings = {'num_splits': args.k,
 if args.model_type in ['clam_sb', 'clam_mb']:
    settings.update({'bag_weight': args.bag_weight,
                     'inst_loss': args.inst_loss,
-                    'B': args.B})
+                    'B': args.B,
+                    'contrastive_loss': args.contrastive_loss,})
 
 print('\nLoad Dataset')
 

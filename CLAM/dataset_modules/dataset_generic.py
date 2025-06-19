@@ -354,19 +354,28 @@ class Generic_MIL_Dataset(Generic_WSI_Classification_Dataset):
 			features = torch.from_numpy(features)
 			return features, label, coords
 
+from collections import Counter
 
 class Generic_Split(Generic_MIL_Dataset):
-	def __init__(self, slide_data, data_dir=None, num_classes=2):
-		self.use_h5 = False
-		self.slide_data = slide_data
-		self.data_dir = data_dir
-		self.num_classes = num_classes
-		self.slide_cls_ids = [[] for i in range(self.num_classes)]
-		for i in range(self.num_classes):
-			self.slide_cls_ids[i] = np.where(self.slide_data['label'] == i)[0]
+    def __init__(self, slide_data, data_dir=None, num_classes=2):
+        self.use_h5 = False
+        self.slide_data = slide_data
+        self.data_dir = data_dir
+        self.num_classes = num_classes
+        self.slide_cls_ids = [[] for i in range(self.num_classes)]
+        for i in range(self.num_classes):
+            self.slide_cls_ids[i] = np.where(self.slide_data['label'] == i)[0]
 
-	def __len__(self):
-		return len(self.slide_data)
-		
+    def __len__(self):
+        return len(self.slide_data)
+
+    def get_class_weights(self):
+        labels = self.slide_data['label']  # Assuming this is a list or NumPy array
+        counts = Counter(labels)
+        # Ensure weights cover all classes even if some are missing
+        freqs = torch.tensor([counts.get(i, 0) for i in range(self.num_classes)], dtype=torch.float)
+        weights = 1.0 / (freqs + 1e-6)  # Add small value to avoid divide-by-zero
+        weights = weights / weights.sum()  # Optional: normalize to sum to 1
+        return weights
 
 

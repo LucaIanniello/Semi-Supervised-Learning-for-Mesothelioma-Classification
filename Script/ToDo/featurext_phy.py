@@ -17,7 +17,7 @@ import zipfile
 url = "https://zenodo.org/records/15700269/files/datasetWSI.zip?download=1"
 
 # Download the file using wget
-!wget -O /content/Train.zip "$url"
+!wget -O /home/liannello/MLIAProject/MLIAProject/Legion/Train.zip "$url"
 
 # Define the extraction path
 extract_path = './'

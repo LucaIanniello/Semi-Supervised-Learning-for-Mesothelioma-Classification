@@ -326,6 +326,7 @@ def train_loop_clam(epoch, model, loader, optimizer, n_classes, bag_weight, writ
 
     print('\n')
     for batch_idx, (data, label) in enumerate(loader):
+        print('batch {}: bag_size {}, label {}'.format(batch_idx, data.size(0), label))
         data, label = data.to(device), label.to(device)
         logits, Y_prob, Y_hat, _, instance_dict = model(data, label=label, instance_eval=True)
                 

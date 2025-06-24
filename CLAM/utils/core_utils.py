@@ -8,8 +8,44 @@ from models.model_clam import CLAM_MB, CLAM_SB
 from sklearn.preprocessing import label_binarize
 from sklearn.metrics import roc_auc_score, roc_curve
 from sklearn.metrics import auc as calc_auc
+# losses.py
+import torch.nn as nn
+import torch.nn.functional as F
 
 device=torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+class FocalLoss(nn.Module):
+    def __init__(self, alpha=None, gamma=2.0, reduction='mean'):
+        """
+        Focal Loss for multi-class classification.
+
+        Args:
+            alpha (Tensor, optional): Class weights [C]. Use to address class imbalance.
+            gamma (float): Focusing parameter (>= 0). Higher focuses more on hard examples.
+            reduction (str): 'mean', 'sum', or 'none'
+        """
+        super(FocalLoss, self).__init__()
+        self.alpha = alpha
+        self.gamma = gamma
+        self.reduction = reduction
+
+    def forward(self, inputs, targets):
+        """
+        Args:
+            inputs (Tensor): Logits of shape [B, C]
+            targets (Tensor): Ground truth labels of shape [B]
+        """
+        ce_loss = F.cross_entropy(inputs, targets, reduction='none', weight=self.alpha)
+        pt = torch.exp(-ce_loss)  # pt = softmax probability of the correct class
+        focal_loss = ((1 - pt) ** self.gamma) * ce_loss
+
+        if self.reduction == 'mean':
+            return focal_loss.mean()
+        elif self.reduction == 'sum':
+            return focal_loss.sum()
+        else:
+            return focal_loss
+
 
 class Accuracy_Logger(object):
     """Accuracy logger"""
@@ -89,10 +125,44 @@ class EarlyStopping:
         torch.save(model.state_dict(), ckpt_name)
         self.val_loss_min = val_loss
 
+def get_max_patches(fraction=0.5):
+    free_mem = torch.cuda.get_device_properties(0).total_memory - torch.cuda.memory_allocated(0)
+    usable_mem = free_mem * fraction
+    max_patches = int((usable_mem / 4) ** 0.5)
+    return max_patches
+
+# Supervised contrastive loss function
+# It is the generic version of the N-pair contrastive loss function
+def supervised_contrastive_loss(features, labels, temperature=0.07):
+    features = torch.nn.functional.normalize(features, dim=1)
+    similarity_matrix = torch.matmul(features, features.T) / temperature
+    labels = labels.contiguous().view(-1, 1)
+    
+    # Dreate a mask where mask[i, j] = 1 if labels[i] == labels[j], else 0
+    mask = torch.eq(labels, labels.T).float().to(features.device)
+    logits_mask = torch.ones_like(mask) - torch.eye(mask.size(0), device=mask.device)
+    mask = mask * logits_mask
+    
+    # Exponentiate similarity scores and apply mask to ignore self-comparisons
+    exp_sim = torch.exp(similarity_matrix) * logits_mask
+    
+    # Compute log-probabilities for each pair
+    log_prob = similarity_matrix - torch.log(exp_sim.sum(1, keepdim=True) + 1e-8)
+    
+    # For each anchor, compute the mean log-probability over positive pairs
+    # In this case I consider the anchor as each patch embedding in the batch
+    # For each anchor, the loss pulls together all the patches embedding with the same label
+    # and pushes away the patches with different labels
+    mean_log_prob_pos = (mask * log_prob).sum(1) / (mask.sum(1) + 1e-8)
+    loss = -mean_log_prob_pos.mean()
+    return loss
+
+
 def train(datasets, cur, args):
     """   
         train for a single fold
     """
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print('\nTraining Fold {}!'.format(cur))
     writer_dir = os.path.join(args.results_dir, str(cur))
     if not os.path.isdir(writer_dir):
@@ -119,6 +189,23 @@ def train(datasets, cur, args):
         loss_fn = SmoothTop1SVM(n_classes = args.n_classes)
         if device.type == 'cuda':
             loss_fn = loss_fn.cuda()
+
+    elif args.bag_loss == 'w_ce':
+      device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+      # After computing weights in your dataset method or before initializing loss:
+      weights = train_split.get_class_weights().to(device)  # Move weights to GPU
+      print("WEIGHTS",weights)
+
+      loss_fn = nn.CrossEntropyLoss(weight=weights)
+
+    elif args.bag_loss == 'focal':
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+        loss_fn = FocalLoss(alpha=None, gamma=0.3)
+        if device.type == 'cuda':
+            loss_fn = loss_fn.cuda()
+
     else:
         loss_fn = nn.CrossEntropyLoss()
     print('Done!')
@@ -183,7 +270,7 @@ def train(datasets, cur, args):
 
     for epoch in range(args.max_epochs):
         if args.model_type in ['clam_sb', 'clam_mb'] and not args.no_inst_cluster:     
-            train_loop_clam(epoch, model, train_loader, optimizer, args.n_classes, args.bag_weight, writer, loss_fn)
+            train_loop_clam(epoch, model, train_loader, optimizer, args.n_classes, args.bag_weight, writer, loss_fn, args.contrastive_loss)
             stop = validate_clam(cur, epoch, model, val_loader, args.n_classes, 
                 early_stopping, writer, loss_fn, args.results_dir)
         
@@ -225,7 +312,7 @@ def train(datasets, cur, args):
     return results_dict, test_auc, val_auc, 1-test_error, 1-val_error 
 
 
-def train_loop_clam(epoch, model, loader, optimizer, n_classes, bag_weight, writer = None, loss_fn = None):
+def train_loop_clam(epoch, model, loader, optimizer, n_classes, bag_weight, writer = None, loss_fn = None, contrastive_loss = False):
     model.train()
     acc_logger = Accuracy_Logger(n_classes=n_classes)
     inst_logger = Accuracy_Logger(n_classes=n_classes)
@@ -234,22 +321,53 @@ def train_loop_clam(epoch, model, loader, optimizer, n_classes, bag_weight, writ
     train_error = 0.
     train_inst_loss = 0.
     inst_count = 0
+    
+    contrastive_weight = 0.1
 
     print('\n')
     for batch_idx, (data, label) in enumerate(loader):
         data, label = data.to(device), label.to(device)
         logits, Y_prob, Y_hat, _, instance_dict = model(data, label=label, instance_eval=True)
+                
+        # print('batch {}, bag_size: {}, label: {}'.format(batch_idx, data.size(0), label.item()))
 
+        # BAG LOSS
         acc_logger.log(Y_hat, label)
         loss = loss_fn(logits, label)
         loss_value = loss.item()
+        
+        # INSTANCE LOSS
 
         instance_loss = instance_dict['instance_loss']
         inst_count+=1
         instance_loss_value = instance_loss.item()
         train_inst_loss += instance_loss_value
         
-        total_loss = bag_weight * loss + (1-bag_weight) * instance_loss 
+        # CONTRASTIVE LOSS
+        if contrastive_loss:
+            instance_embeddings = instance_dict['h']
+            bag_label = label.item()
+            bag_size = instance_embeddings.size(0)
+            patch_labels = torch.full((bag_size,), bag_label, dtype=torch.long, device=instance_embeddings.device)
+            
+            # Sample a maximum number of patches to avoid memory issues
+            max_patches = max(1024, get_max_patches(0.1))
+            if instance_embeddings.size(0) > max_patches:
+                idx = torch.randperm(instance_embeddings.size(0))[:max_patches]
+                sampled_embeddings = instance_embeddings[idx]
+                sampled_labels = patch_labels[idx]
+            else:
+                sampled_embeddings = instance_embeddings
+                sampled_labels = patch_labels
+                
+            contrastive_loss = supervised_contrastive_loss(sampled_embeddings, sampled_labels) 
+            
+            # If you want to use the instance embeddings for contrastive loss, uncomment the line below    
+            # contrastive_loss = supervised_contrastive_loss(instance_embeddings, patch_labels)            
+            total_loss = (bag_weight * loss + (1 - bag_weight - contrastive_weight) * instance_loss + contrastive_weight * contrastive_loss)
+        
+        else:
+            total_loss = bag_weight * loss + (1 - bag_weight) * instance_loss      
 
         inst_preds = instance_dict['inst_preds']
         inst_labels = instance_dict['inst_labels']

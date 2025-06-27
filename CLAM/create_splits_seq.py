@@ -17,6 +17,17 @@ parser.add_argument('--val_frac', type=float, default= 0.1,
                     help='fraction of labels for validation (default: 0.1)')
 parser.add_argument('--test_frac', type=float, default= 0.1,
                     help='fraction of labels for test (default: 0.1)')
+parser.add_argument('--feature_extractor', type=str, choices=[
+    "resnet50-clam",
+    "resnet50-trident",
+    "phikon-trident",
+    "univ1-trident",
+    "univ2-trident",
+    "aug-resnet50-trident",
+    "aug-phikon-trident",
+    "aug-univ1-trident",
+    "aug-univ2-trident"
+], help='feature extractor type')
 
 args = parser.parse_args()
 
@@ -43,7 +54,11 @@ elif args.task == 'task_2_tumor_subtyping':
     
 elif args.task == 'MLIA_Project':
     args.n_classes=3
-    dataset = Generic_WSI_Classification_Dataset(csv_path = 'MLIAProject/CLAM/dataset_csv/MLIA_Project_CLAM.csv',
+    if args.feature_extractor == 'resnet50-clam':
+        csv_path = 'MLIAProject/CLAM/dataset_csv/MLIA_Project_CLAM.csv'
+    else:
+        csv_path = 'MLIAProject/results_features/pt_files/datasetComposition.csv'
+    dataset = Generic_WSI_Classification_Dataset(csv_path = csv_path,
                             shuffle = False, 
                             seed = args.seed, 
                             print_info = True,

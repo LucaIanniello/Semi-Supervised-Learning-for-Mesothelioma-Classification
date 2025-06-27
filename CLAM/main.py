@@ -111,6 +111,18 @@ parser.add_argument('--bag_weight', type=float, default=0.7,
 parser.add_argument('--B', type=int, default=8, help='numbr of positive/negative patches to sample for clam')
 parser.add_argument('--contrastive_loss', default=False, action='store_true',
                      help='enable contrastive loss for CLAM')
+parser.add_argument('--feature_extractor', type=str, choices=[
+    "resnet50-clam",
+    "resnet50-trident",
+    "phikon-trident",
+    "univ1-trident",
+    "univ2-trident",
+    "aug-resnet50-trident",
+    "aug-phikon-trident",
+    "aug-univ1-trident",
+    "aug-univ2-trident"
+], help='feature extractor type')
+
 args = parser.parse_args()
 device=torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -179,7 +191,12 @@ elif args.task == 'task_2_tumor_subtyping':
     
 elif args.task == 'MLIA_Project':
     args.n_classes=3
-    dataset = Generic_MIL_Dataset(csv_path = 'MLIAProject/CLAM/dataset_csv/MLIA_Project_CLAM.csv',
+    if args.feature_extractor == 'resnet50-clam':
+        csv_path = 'MLIAProject/CLAM/dataset_csv/MLIA_Project_CLAM.csv'
+    else:
+        csv_path = 'MLIAProject/results_features/pt_files/datasetComposition.csv'
+        
+    dataset = Generic_MIL_Dataset(csv_path = csv_path,
                             data_dir= os.path.join(args.data_root_dir, ''),
                             shuffle = False, 
                             seed = args.seed, 

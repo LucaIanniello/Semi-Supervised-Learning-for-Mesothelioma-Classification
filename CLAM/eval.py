@@ -42,6 +42,17 @@ parser.add_argument('--split', type=str, choices=['train', 'val', 'test', 'all']
 parser.add_argument('--task', type=str, choices=['task_1_tumor_vs_normal',  'task_2_tumor_subtyping', 'MLIA_Project'])
 parser.add_argument('--drop_out', type=float, default=0.25, help='dropout')
 parser.add_argument('--embed_dim', type=int, default=1024)
+parser.add_argument('--feature_extractor', type=str, choices=[
+    "resnet50-clam",
+    "resnet50-trident",
+    "phikon-trident",
+    "univ1-trident",
+    "univ2-trident",
+    "aug-resnet50-trident",
+    "aug-phikon-trident",
+    "aug-univ1-trident",
+    "aug-univ2-trident"
+], help='feature extractor type')
 args = parser.parse_args()
 
 device=torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -103,7 +114,12 @@ elif args.task == 'task_2_tumor_subtyping':
 
 elif args.task == 'MLIA_Project':
     args.n_classes=3
-    dataset = Generic_MIL_Dataset(csv_path = 'MLIAProject/CLAM/dataset_csv/MLIA_Project_CLAM.csv',
+    args.n_classes=3
+    if args.feature_extractor == 'resnet50-clam':
+        csv_path = 'MLIAProject/CLAM/dataset_csv/MLIA_Project_CLAM.csv'
+    else:
+        csv_path = 'MLIAProject/results_features/pt_files/datasetComposition.csv'
+    dataset = Generic_MIL_Dataset(csv_path = csv_path,
                             data_dir= os.path.join(args.data_root_dir, ''),
                             shuffle = False, 
                             print_info = True,

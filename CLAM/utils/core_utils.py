@@ -326,7 +326,7 @@ def train_loop_clam(epoch, model, loader, optimizer, n_classes, bag_weight, writ
 
     print('\n')
     for batch_idx, (data, label) in enumerate(loader):
-        print('batch {}: bag_size {}, label {}'.format(batch_idx, data.size(0), label))
+        # print('batch {}: bag_size {}, label {}'.format(batch_idx, data.size(0), label))
         data, label = data.to(device), label.to(device)
         logits, Y_prob, Y_hat, _, instance_dict = model(data, label=label, instance_eval=True)
                 
@@ -347,19 +347,25 @@ def train_loop_clam(epoch, model, loader, optimizer, n_classes, bag_weight, writ
         # CONTRASTIVE LOSS
         if contrastive_loss:
             instance_embeddings = instance_dict['h']
-            bag_label = label.item()
-            bag_size = instance_embeddings.size(0)
-            patch_labels = torch.full((bag_size,), bag_label, dtype=torch.long, device=instance_embeddings.device)
+            # bag_label = label.item()
+            # bag_size = instance_embeddings.size(0)
+            # patch_labels = torch.full((bag_size,), bag_label, dtype=torch.long, device=instance_embeddings.device)
             
-            # Sample a maximum number of patches to avoid memory issues
-            max_patches = max(1024, get_max_patches(0.1))
-            if instance_embeddings.size(0) > max_patches:
-                idx = torch.randperm(instance_embeddings.size(0))[:max_patches]
-                sampled_embeddings = instance_embeddings[idx]
-                sampled_labels = patch_labels[idx]
-            else:
-                sampled_embeddings = instance_embeddings
-                sampled_labels = patch_labels
+            # # Sample a maximum number of patches to avoid memory issues
+            # max_patches = max(1024, get_max_patches(0.1))
+            # if instance_embeddings.size(0) > max_patches:
+            #     idx = torch.randperm(instance_embeddings.size(0))[:max_patches]
+            #     sampled_embeddings = instance_embeddings[idx]
+            #     sampled_labels = patch_labels[idx]
+            # else:
+            #     sampled_embeddings = instance_embeddings
+            #     sampled_labels = patch_labels
+            instance_losses = instance_dict['instance_loss']
+            k = min(5000, instance_losses.size(0))
+            _, idx = torch.topk(- instance_losses, k)
+            sampled_embeddings = instance_embeddings[idx]
+            sampled_labels = label[idx]
+                
                 
             contrastive_loss = supervised_contrastive_loss(sampled_embeddings, sampled_labels) 
             

@@ -307,7 +307,7 @@ MPLBACKEND=Agg conda run -n dsmil python compute_feats.py --dataset=ndpi_files -
     --weights_high=high
 
 echo "📈 Inspecting CSV file shapes:"
-for f in /content/dsmil-wsi/datasets/ndpi_files/*/*.csv; do
+for f in /dsmil-wsi/datasets/ndpi_files/*/*.csv; do
     echo -n "$f: "
     python -c "import pandas as pd; df = pd.read_csv('$f'); print(df.shape)"
 done
@@ -567,7 +567,7 @@ def main():
     if args.dataset == 'TCGA-lung-default':
         bags_csv = 'datasets/tcga-dataset/TCGA.csv'
     else:
-        bags_csv = os.path.join('/content/dsmil-wsi/datasets/', args.dataset, args.dataset+'.csv')
+        bags_csv = os.path.join('/dsmil-wsi/datasets/', args.dataset, args.dataset+'.csv')
 
     generate_pt_files(args, pd.read_csv(bags_csv))
 

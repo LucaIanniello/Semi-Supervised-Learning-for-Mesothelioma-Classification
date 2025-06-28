@@ -33,7 +33,7 @@ def main():
  
     dataset = DataSetWrapper(config['batch_size'], **config['dataset'])   
     generate_csv(args)
-    simclr = SimCLR(dataset, config)
+    simclr = SimCLR(dataset, config, args)
     simclr.train()
 
 

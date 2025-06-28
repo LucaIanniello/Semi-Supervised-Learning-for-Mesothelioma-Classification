@@ -30,10 +30,10 @@ def _save_config_file(model_checkpoints_folder):
 
 class SimCLR(object):
 
-    def __init__(self, dataset, config):
+    def __init__(self, dataset, config, args):
         self.config = config
         self.device = self._get_device()
-        self.writer = SummaryWriter()
+        self.writer = SummaryWriter(log_dir=f"runs/{args.level}")
         self.dataset = dataset
         self.nt_xent_criterion = NTXentLoss(self.device, config['batch_size'], **config['loss'])
 

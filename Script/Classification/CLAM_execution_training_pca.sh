@@ -1,9 +1,9 @@
 #!/bin/bash
-#SBATCH --job-name=CLAMCLassification
+#SBATCH --job-name=CLAMCLassificationPCA
 #SBATCH --ntasks=1
 #SBATCH --mail-type=ALL
 #SBATCH --mail-user=s327313@studenti.polito.it
-#SBATCH --output=clam_classification.log
+#SBATCH --output=clam_classification_pca.log
 #SBATCH --gres=gpu:1
 #SBATCH --partition=gpu_a40_ext
 #SBATCH --mem=32G
@@ -93,7 +93,8 @@ for feature_extractor in "${extractors[@]}"; do
     unzip -o Train.zip -d "$extract_path"
 
     echo ">> Converting .h5 to .pt and creating CSV for trident extractors..."
-    python3 /home/liannello/MLIAProject/convert_h5_to_pt_and_csv.py --feature_extractor "$feature_extractor" --output_dir "$WORK_DIR/results_features/pt_files/"
+    pca_dim=$(python3 /home/liannello/MLIAProject/convert_h5_to_pt_and_csv.py --feature_extractor "$feature_extractor" --output_dir "$WORK_DIR/results_features/pt_files/" --pca | tail -1)
+    echo "PCA output dimension: $pca_dim"
 
     echo ">> Creating splits"
     MPLBACKEND=Agg conda run -n clam_latest python $CLAM_DIR/create_splits_seq.py \
@@ -101,53 +102,27 @@ for feature_extractor in "${extractors[@]}"; do
         --feature_extractor "$feature_extractor"
 
     echo ">> Training CLAM"
-
-    if [[ "$feature_extractor" != "univ2-trident" && "$feature_extractor" != "aug-univ2-trident" ]]; then
-      MPLBACKEND=Agg CUDA_VISIBLE_DEVICES=0 conda run -n clam_latest python $CLAM_DIR/main.py \
+    MPLBACKEND=Agg CUDA_VISIBLE_DEVICES=0 conda run -n clam_latest python $CLAM_DIR/main.py \
         --max_epoch 300 --drop_out 0.25 --lr 1e-4 --k 1 --exp_code "CLAM_${feature_extractor}_50" \
         --weighted_sample --bag_loss ce --inst_loss svm --task MLIA_Project \
         --model_type clam_sb --log_data --subtyping \
-        --data_root_dir "$WORK_DIR/results_features" --embed_dim 1024 \
+        --data_root_dir "$WORK_DIR/results_features" --embed_dim $pca_dim \
         --feature_extractor "$feature_extractor"
 
-      echo ">> Zipping training results"
-      zip -r "results_${feature_extractor}.zip" "$WORK_DIR/results"
+    echo ">> Zipping training results"
+    zip -r "results_${feature_extractor}.zip" "$WORK_DIR/results"
 
-      echo ">> Evaluating CLAM"
-      MPLBACKEND=Agg CUDA_VISIBLE_DEVICES=0 conda run -n clam_latest python $CLAM_DIR/eval.py \
-          --k 1 --models_exp_code "CLAM_${feature_extractor}_50_s1" \
-          --save_exp_code "CLAM_eval_${feature_extractor}" \
-          --task MLIA_Project --model_type clam_sb --results_dir "$WORK_DIR/results" \
-          --data_root_dir "$WORK_DIR/results_features" --embed_dim 1024 \
-          --feature_extractor "$feature_extractor"
-
-      echo ">> Zipping evaluation results"
-      zip -r "eval_${feature_extractor}.zip" "$WORK_DIR/eval_results"
-
-    else
-      MPLBACKEND=Agg CUDA_VISIBLE_DEVICES=0 conda run -n clam_latest python $CLAM_DIR/main.py \
-        --max_epoch 300 --drop_out 0.25 --lr 1e-4 --k 1 --exp_code "CLAM_${feature_extractor}_50" \
-        --weighted_sample --bag_loss ce --inst_loss svm --task MLIA_Project \
-        --model_type clam_sb --log_data --subtyping \
-        --data_root_dir "$WORK_DIR/results_features" --embed_dim 1536 \
+    echo ">> Evaluating CLAM"
+    MPLBACKEND=Agg CUDA_VISIBLE_DEVICES=0 conda run -n clam_latest python $CLAM_DIR/eval.py \
+        --k 1 --models_exp_code "CLAM_${feature_extractor}_50_s1" \
+        --save_exp_code "CLAM_eval_${feature_extractor}" \
+        --task MLIA_Project --model_type clam_sb --results_dir "$WORK_DIR/results" \
+        --data_root_dir "$WORK_DIR/results_features" --embed_dim $pca_dim\
         --feature_extractor "$feature_extractor"
 
-      echo ">> Zipping training results"
-      zip -r "results_${feature_extractor}.zip" "$WORK_DIR/results"
+    echo ">> Zipping evaluation results"
+    zip -r "eval_${feature_extractor}.zip" "$WORK_DIR/eval_results"
 
-      echo ">> Evaluating CLAM"
-      MPLBACKEND=Agg CUDA_VISIBLE_DEVICES=0 conda run -n clam_latest python $CLAM_DIR/eval.py \
-          --k 1 --models_exp_code "CLAM_${feature_extractor}_50_s1" \
-          --save_exp_code "CLAM_eval_${feature_extractor}" \
-          --task MLIA_Project --model_type clam_sb --results_dir "$WORK_DIR/results" \
-          --data_root_dir "$WORK_DIR/results_features" --embed_dim 1536 \
-          --feature_extractor "$feature_extractor"
-
-      echo ">> Zipping evaluation results"
-      zip -r "eval_${feature_extractor}.zip" "$WORK_DIR/eval_results"
-
-    fi
-    
     echo "✅ Done with $feature_extractor"
 done
 

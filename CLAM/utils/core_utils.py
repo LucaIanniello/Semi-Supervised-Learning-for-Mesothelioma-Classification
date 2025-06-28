@@ -328,7 +328,7 @@ def train_loop_clam(epoch, model, loader, optimizer, n_classes, bag_weight, writ
     for batch_idx, (data, label) in enumerate(loader):
         # print('batch {}: bag_size {}, label {}'.format(batch_idx, data.size(0), label))
         data, label = data.to(device), label.to(device)
-        logits, Y_prob, Y_hat, _, instance_dict = model(data, label=label, instance_eval=True)
+        logits, Y_prob, Y_hat, A_raw, instance_dict = model(data, label=label, instance_eval=True)
                 
         # print('batch {}, bag_size: {}, label: {}'.format(batch_idx, data.size(0), label.item()))
 
@@ -360,11 +360,12 @@ def train_loop_clam(epoch, model, loader, optimizer, n_classes, bag_weight, writ
             # else:
             #     sampled_embeddings = instance_embeddings
             #     sampled_labels = patch_labels
-            instance_losses = instance_dict['instance_loss']
-            k = min(5000, instance_losses.size(0))
-            _, idx = torch.topk(- instance_losses, k)
-            sampled_embeddings = instance_embeddings[idx]
-            sampled_labels = label[idx]
+            attention_scores = torch.softmax(A_raw, dim=1).squeeze()  # shape: [N]
+            k = min(10000, attention_scores.size(0))
+            topk_indices = torch.topk(attention_scores, k)[1].long()
+            print('topk_indices', topk_indices)
+            sampled_embeddings = instance_embeddings[topk_indices]
+            sampled_labels = torch.full((k,), label.item(), dtype=torch.long, device=instance_embeddings.device)
                 
                 
             contrastive_loss = supervised_contrastive_loss(sampled_embeddings, sampled_labels) 

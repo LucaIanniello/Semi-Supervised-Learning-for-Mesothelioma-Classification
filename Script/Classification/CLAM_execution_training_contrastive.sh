@@ -108,7 +108,7 @@ for feature_extractor in "${extractors[@]}"; do
         --weighted_sample --bag_loss ce --inst_loss svm --task MLIA_Project \
         --model_type clam_sb --log_data --subtyping \
         --data_root_dir "$WORK_DIR/results_features" --embed_dim 1024 \
-        --feature_extractor "$feature_extractor"
+        --feature_extractor "$feature_extractor" --contrastive_loss
 
       echo ">> Zipping training results"
       zip -r "results_${feature_extractor}.zip" "$WORK_DIR/results"
@@ -130,7 +130,7 @@ for feature_extractor in "${extractors[@]}"; do
         --weighted_sample --bag_loss ce --inst_loss svm --task MLIA_Project \
         --model_type clam_sb --log_data --subtyping \
         --data_root_dir "$WORK_DIR/results_features" --embed_dim 1536 \
-        --feature_extractor "$feature_extractor"
+        --feature_extractor "$feature_extractor" --contrastive_loss
 
       echo ">> Zipping training results"
       zip -r "results_${feature_extractor}.zip" "$WORK_DIR/results"

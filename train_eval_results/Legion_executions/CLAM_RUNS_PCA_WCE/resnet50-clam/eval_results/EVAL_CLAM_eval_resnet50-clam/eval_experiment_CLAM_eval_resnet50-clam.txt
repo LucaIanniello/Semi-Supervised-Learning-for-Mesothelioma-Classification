@@ -1,0 +1,1 @@
+{'task': 'MLIA_Project', 'split': 'test', 'save_dir': './eval_results/EVAL_CLAM_eval_resnet50-clam', 'models_dir': '/home/liannello/MLIAProject/MLIAProject/CLAM_RUNS_PCA_WCE/resnet50-clam/results/CLAM_resnet50-clam_50_s1', 'model_type': 'clam_sb', 'drop_out': 0.25, 'model_size': 'small'}

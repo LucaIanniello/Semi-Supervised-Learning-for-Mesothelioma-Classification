@@ -3,7 +3,7 @@
 #SBATCH --ntasks=1
 #SBATCH --mail-type=ALL
 #SBATCH --mail-user=s327313@studenti.polito.it
-#SBATCH --output=clam_classification.log
+#SBATCH --output=clam_classification_focal.log
 #SBATCH --gres=gpu:1
 #SBATCH --partition=gpu_a40_ext
 #SBATCH --mem=32G
@@ -38,7 +38,7 @@ for feature_extractor in "${extractors[@]}"; do
     echo ">>> Processing $feature_extractor"
 
     # Create working dir
-    WORK_DIR=$BASE_DIR/CLAM_RUNS/$feature_extractor
+    WORK_DIR=$BASE_DIR/CLAM_RUNS_FOCAL/$feature_extractor
     mkdir -p "$WORK_DIR"
     cd "$WORK_DIR"
 
@@ -105,7 +105,7 @@ for feature_extractor in "${extractors[@]}"; do
     if [[ "$feature_extractor" != "univ2-trident" && "$feature_extractor" != "aug-univ2-trident" ]]; then
       MPLBACKEND=Agg CUDA_VISIBLE_DEVICES=0 conda run -n clam_latest python $CLAM_DIR/main.py \
         --max_epoch 300 --drop_out 0.25 --lr 1e-4 --k 1 --exp_code "CLAM_${feature_extractor}_50" \
-        --weighted_sample --bag_loss ce --inst_loss svm --task MLIA_Project \
+        --weighted_sample --bag_loss focal --inst_loss svm --task MLIA_Project \
         --model_type clam_sb --log_data --subtyping \
         --data_root_dir "$WORK_DIR/results_features" --embed_dim 1024 \
         --feature_extractor "$feature_extractor"
@@ -127,7 +127,7 @@ for feature_extractor in "${extractors[@]}"; do
     else
       MPLBACKEND=Agg CUDA_VISIBLE_DEVICES=0 conda run -n clam_latest python $CLAM_DIR/main.py \
         --max_epoch 300 --drop_out 0.25 --lr 1e-4 --k 1 --exp_code "CLAM_${feature_extractor}_50" \
-        --weighted_sample --bag_loss ce --inst_loss svm --task MLIA_Project \
+        --weighted_sample --bag_loss focal --inst_loss svm --task MLIA_Project \
         --model_type clam_sb --log_data --subtyping \
         --data_root_dir "$WORK_DIR/results_features" --embed_dim 1536 \
         --feature_extractor "$feature_extractor"

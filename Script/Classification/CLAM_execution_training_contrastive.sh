@@ -3,7 +3,7 @@
 #SBATCH --ntasks=1
 #SBATCH --mail-type=ALL
 #SBATCH --mail-user=s327313@studenti.polito.it
-#SBATCH --output=clam_classification.log
+#SBATCH --output=clam_classification_contrastive.log
 #SBATCH --gres=gpu:1
 #SBATCH --partition=gpu_a40_ext
 #SBATCH --mem=32G
@@ -38,7 +38,7 @@ for feature_extractor in "${extractors[@]}"; do
     echo ">>> Processing $feature_extractor"
 
     # Create working dir
-    WORK_DIR=$BASE_DIR/CLAM_RUNS/$feature_extractor
+    WORK_DIR=$BASE_DIR/CLAM_RUNS_contrastive/$feature_extractor
     mkdir -p "$WORK_DIR"
     cd "$WORK_DIR"
 

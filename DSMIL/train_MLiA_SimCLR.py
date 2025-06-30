@@ -254,7 +254,6 @@ def main():
 
         import csv
         from sklearn.model_selection import StratifiedKFold, train_test_split
-
         print('5-fold-cv')
         bags_path = glob.glob('temp_train/*.pt')
         kf = StratifiedKFold(n_splits=1, shuffle=True, random_state=42)

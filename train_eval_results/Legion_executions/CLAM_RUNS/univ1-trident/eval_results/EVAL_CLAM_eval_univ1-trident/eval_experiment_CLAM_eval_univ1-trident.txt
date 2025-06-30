@@ -1,0 +1,1 @@
+{'task': 'MLIA_Project', 'split': 'test', 'save_dir': './eval_results/EVAL_CLAM_eval_univ1-trident', 'models_dir': '/home/liannello/MLIAProject/MLIAProject/CLAM_RUNS/univ1-trident/results/CLAM_univ1-trident_50_s1', 'model_type': 'clam_sb', 'drop_out': 0.25, 'model_size': 'small'}

@@ -23,61 +23,21 @@ mkdir -p "$FEATURE_DIR"
 
 # List of feature extractors
 extractors=(
-    "resnet50-clam"
-    "resnet50-trident"
-    "phikon-trident"
-    "univ1-trident"
-    "univ2-trident"
-    "aug-resnet50-trident"
-    "aug-phikon-trident"
-    "aug-univ1-trident"
-    "aug-univ2-trident"
+    "augdiff-resnet50-trident"
 )
 
 for feature_extractor in "${extractors[@]}"; do
     echo ">>> Processing $feature_extractor"
 
     # Create working dir
-    WORK_DIR=$BASE_DIR/CLAM_RUNS_PCA_FOCAL/$feature_extractor
+    WORK_DIR=$BASE_DIR/CLAM_RUNS_PCA_WCE/$feature_extractor
     mkdir -p "$WORK_DIR"
     cd "$WORK_DIR"
 
     # Select Zenodo URL
     case $feature_extractor in
-        ("resnet50-clam")
-            url="https://zenodo.org/records/15547611/files/datasetUnified_PT.zip?download=1"
-            extract_path="./"
-            ;;
-        ("resnet50-trident")
-            url="https://zenodo.org/records/15711642/files/datasetTrident_resnet.zip?download=1"
-            extract_path="./results_features/pt_files"
-            ;;
-        ("phikon-trident")
-            url="https://zenodo.org/records/15736995/files/datasetTrident_phikon.zip?download=1"
-            extract_path="./results_features/pt_files"
-            ;;
-        ("univ1-trident")
-            url="https://zenodo.org/records/15711374/files/datasetTrident_univ1.zip?download=1"
-            extract_path="./results_features/pt_files"
-            ;;
-        ("univ2-trident")
-            url="https://zenodo.org/records/15732622/files/datasetTrident_univ2.zip?download=1"
-            extract_path="./results_features/pt_files"
-            ;;
-        ("aug-resnet50-trident")
-            url="https://zenodo.org/records/15747009/files/datasetCompleted.zip?download=1"
-            extract_path="./results_features/pt_files"
-            ;;
-        ("aug-phikon-trident")
-            url="https://zenodo.org/records/15747510/files/datasetCompleted.zip?download=1"
-            extract_path="./results_features/pt_files"
-            ;;
-        ("aug-univ1-trident")
-            url="https://zenodo.org/records/15747223/files/datasetCompleted.zip?download=1"
-            extract_path="./results_features/pt_files"
-            ;;
-        ("aug-univ2-trident")
-            url="https://zenodo.org/records/15747608/files/datasetCompleted.zip?download=1"
+        ("augdiff-resnet50-trident")
+            url="https://zenodo.org/records/15786844/files/datasetCompleted.zip?download=1"
             extract_path="./results_features/pt_files"
             ;;
         (*)
@@ -104,10 +64,10 @@ for feature_extractor in "${extractors[@]}"; do
     echo ">> Training CLAM"
     MPLBACKEND=Agg CUDA_VISIBLE_DEVICES=0 conda run -n clam_latest python $CLAM_DIR/main.py \
         --max_epoch 300 --drop_out 0.25 --lr 1e-4 --k 1 --exp_code "CLAM_${feature_extractor}_50" \
-        --weighted_sample --bag_loss focal --inst_loss svm --task MLIA_Project \
+        --weighted_sample --bag_loss w_ce --inst_loss svm --task MLIA_Project \
         --model_type clam_sb --log_data --subtyping \
         --data_root_dir "$WORK_DIR/results_features" --embed_dim $pca_dim \
-        --feature_extractor "$feature_extractor" --contrastive_loss
+        --feature_extractor "$feature_extractor"
 
     echo ">> Zipping training results"
     zip -r "results_${feature_extractor}.zip" "$WORK_DIR/results"

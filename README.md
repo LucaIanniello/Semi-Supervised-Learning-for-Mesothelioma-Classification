@@ -10,7 +10,7 @@ This research investigates the effectiveness of **semi-supervised machine learni
 
 ## 📄 Documentation
 
-- **Complete Report**: [`mla25_fp01-2.pdf`](./mla25_fp01-2.pdf)
+- **Complete Report**: [`mla25_fp01-2.pdf`](./Project_Report.pdf)
 - **Project Repository**: [MLIAProject](https://github.com/LucaIanniello/MLIAProject)
 
 ### Research Questions

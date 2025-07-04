@@ -204,15 +204,7 @@ Key papers and resources used in this research:
 
 This repository represents completed research work conducted at Politecnico di Torino. For questions about methodology, results, or potential collaborations, please open an issue or contact the authors.
 
-## 📧 Contact
 
-For inquiries about this research project:
-
-- **Luca Ianniello** - [GitHub](https://github.com/LucaIanniello)
-- **Raffaele Martone** - Student at Politecnico di Torino
-- **Antonio Sirica** - Student at Politecnico di Torino
-
-**Institution**: Politecnico di Torino, Machine Learning in Applications Course
 
 ## 🏥 Acknowledgments
 

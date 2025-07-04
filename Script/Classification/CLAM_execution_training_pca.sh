@@ -23,6 +23,15 @@ mkdir -p "$FEATURE_DIR"
 
 # List of feature extractors
 extractors=(
+    "resnet50-clam"
+    "resnet50-trident"
+    "phikon-trident"
+    "univ1-trident"
+    "univ2-trident"
+    "aug-resnet50-trident"
+    "aug-phikon-trident"
+    "aug-univ1-trident"
+    "aug-univ2-trident"
     "augdiff-resnet50-trident"
 )
 
@@ -60,6 +69,10 @@ for feature_extractor in "${extractors[@]}"; do
     MPLBACKEND=Agg conda run -n clam_latest python $CLAM_DIR/create_splits_seq.py \
         --task MLIA_Project --seed 1 --k 1 --val_frac 0.2 --test_frac 0.2 \
         --feature_extractor "$feature_extractor"
+
+    ## To replicate results with the different loss, substitute the ce in --bag_loss with focal or with wce. 
+    ## For the use of the contrastive loss, add --contrastive_loss to the command.
+
 
     echo ">> Training CLAM"
     MPLBACKEND=Agg CUDA_VISIBLE_DEVICES=0 conda run -n clam_latest python $CLAM_DIR/main.py \

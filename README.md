@@ -39,37 +39,90 @@ This research investigates the effectiveness of **semi-supervised machine learni
 
 ```
 MLIAProject/
-├── CLAM/                     # CLAM implementation and experiments
-│   ├── dataset_modules/      # Dataset handling utilities
-│   ├── models/              # Model architectures (CLAM, attention mechanisms)
-│   ├── utils/               # Utility functions and helpers
-│   ├── requirements.txt     # Python dependencies
-│   └── env.yml             # Conda environment configuration
-├── DSMIL/                   # DSMIL implementation
-│   ├── models/             # Dual-stream MIL architecture
-│   ├── datasets/           # Data loading and preprocessing
-│   └── configs/            # Configuration files
-├── Papers/                  # Research papers and references
+Semi-Supervised-Learning-for-Mesothelioma-Classification/
+├── CLAM/                          # CLAM implementation and experiments
+│   └── ...                        # CLAM code
+├── DSMIL/                         # DSMIL implementation
+│   └── ...                        # DSMIL code
+├── Papers/                        # Research papers and references
 │   ├── CLAM_paper.pdf
 │   ├── DSMIL_paper.pdf
 │   ├── UNI_foundation.pdf
 │   └── related_work/
-├── Results_Train_Eval/      # Training and evaluation results
-│   ├── CLAM_results_*/     # CLAM experimental results
-│   ├── DSMIL_results_*.csv # DSMIL experimental results
-│   ├── attention_maps/     # Visualization outputs
-│   └── performance_logs/   # Training logs and metrics
-├── Script/                  # Execution scripts and notebooks
-│   ├── preprocessing/      # Data preprocessing scripts
-│   ├── training/          # Training orchestration
-│   ├── evaluation/        # Model evaluation and visualization
-│   └── analysis/          # Statistical analysis notebooks
-├── presets/                # Configuration presets
-│   ├── clam_configs/      # CLAM training configurations
-│   ├── dsmil_configs/     # DSMIL training configurations
-│   └── feature_configs/   # Feature extraction settings
-├── mla25_fp01-2.pdf        # Complete research report
-└── README.md              # This file
+├── Results_Train_Eval/           # Training and evaluation results
+│   ├── Training Log/             # Training logs
+│   │   ├── clam_classification.log
+│   │   ├── clam_classification_contrastive.log
+│   │   ├── clam_classification_focal.log
+│   │   ├── clam_classification_pca.log
+│   │   ├── clam_classification_pca_contrastive.log
+│   │   ├── clam_classification_pca_focal.log
+│   │   └── clam_classification_pca_wce.log
+│   ├── Training Results/         # Training results
+│   │   ├── Colab_execution/      # Google Colab execution results
+│   │   │   ├── CLAM_results_Contrastive/
+│   │   │   ├── CLAM_results_Contrastive=0.3/
+│   │   │   ├── CLAM_results_Contrastive_PCA/
+│   │   │   ├── CLAM_results_Contrastive_PCA_0.3/
+│   │   │   ├── CLAM_results_focal_fold=1_steps=300/
+│   │   │   ├── CLAM_results_fold=1_steps=300_PCA/
+│   │   │   └── CLAM_results_w_ce_fold=1_steps=300/
+│   │   └── Legion_executions/    # Legion server execution results
+│   │       ├── CLAM_RUNS/
+│   │       ├── CLAM_RUNS_FOCAL/
+│   │       ├── CLAM_RUNS_PCA/
+│   │       ├── CLAM_RUNS_PCA_CONTRASTIVE/
+│   │       ├── CLAM_RUNS_PCA_FOCAL/
+│   │       ├── CLAM_RUNS_PCA_WCE/
+│   │       ├── CLAM_RUNS_WCE/
+│   │       ├── CLAM_RUNS_contrastive/
+│   │       ├── CLAM_results_fold=1_steps=300/
+│   │       └── CLAM_results_original_setting_paper_fold=10/
+│   └── DSMIL_results_resnet50.csv # DSMIL experimental results
+├── Script/                       # Execution scripts and notebooks
+│   ├── Augumentation/           # Data augmentation scripts
+│   │   ├── AugDiff/             # AugDiff augmentation method
+│   │   │   └── DataAugumentationWithAugDiff.ipynb
+│   │   └── Extrapolation/       # Extrapolation augmentation method
+│   │       ├── DataAugumentationWithExtrapolation_Resnet50.ipynb
+│   │       ├── DataAugumentationWithExtrapolation_Univ1.ipynb
+│   │       ├── DataAugumentationWithExtrapolation_Univ2.ipynb
+│   │       └── DataAugumentationWithExtrapolation_phikon.ipynb
+│   ├── Classification/          # Classification scripts
+│   │   ├── CLAM_execution_training.ipynb
+│   │   ├── CLAM_execution_training.sh
+│   │   └── CLAM_execution_training_pca.sh
+│   ├── Dataset_generation/      # Dataset generation scripts
+│   │   ├── UploadDatasetNPDI.ipynb
+│   │   ├── costructionDataset.ipynb
+│   │   ├── createDatasetFromWSI+Zip+Zenodo.ipynb
+│   │   └── createDatasetFromWSI.ipynb
+│   ├── Feature_extraction/      # Feature extraction scripts
+│   │   ├── featurExt_phy.ipynb
+│   │   ├── featureExtWithTrident.ipynb
+│   │   ├── featureExt_Univ2.ipynb
+│   │   ├── featureext_univ2.py
+│   │   ├── featureext_univ2.sh
+│   │   ├── featurext_phy.py
+│   │   ├── featurext_phy.sh
+│   │   ├── trident.log
+│   │   └── trident_2.log
+│   ├── Utils/                   # Utility scripts
+│   │   ├── old/                 # Old utility files
+│   │   ├── create_heatmaps.ipynb
+│   │   ├── down.py
+│   │   └── visualizeWSI.ipynb
+│   ├── .DS_Store               # System file
+│   ├── execution.log           # Execution log
+│   └── selected_wsi.txt        # Selected WSI list
+├── presets/                     # Configuration presets
+│   ├── clam_configs/           # CLAM training configurations
+│   ├── dsmil_configs/          # DSMIL training configurations
+│   └── feature_configs/        # Feature extraction settings
+├── .DS_Store                   # System file
+├── .gitignore                  # Git ignore configuration
+├── Project_Report.pdf          # Complete research report
+└── README.md                   # Repository documentation
 ```
 
 ## 🧪 Experimental Setup
